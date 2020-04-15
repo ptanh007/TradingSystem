@@ -1,0 +1,8 @@
+numpy
+pandas
+hyperopt
+matplotlib
+plotly
+dash
+Flask
+gunicorn
