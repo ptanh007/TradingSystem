@@ -1,13 +1,19 @@
+import pandas as pd
+import numpy as np
+import pandas_datareader.data as web
+from alpha_vantage.timeseries import TimeSeries
+from hyperopt import hp, tpe, fmin
 import matplotlib.pyplot as plt
 from matplotlib import style
-import numpy as np
-import pandas as pd
-import pandas_datareader.data as web
-from hyperopt import hp, tpe, fmin
 style.use('ggplot')
 
 import lib
 
+
+
+#Get data with package alpha_vantage
+api_key = 'RNZPXZ6Q9FEFMEHM'
+ts = TimeSeries(key = api_key, output_format = 'pandas')
 
 def find_signal(paras):
     df = paras['df']
@@ -30,7 +36,8 @@ def find_signal(paras):
     signals['position'] = signals['signal'].diff()
     
     return signals
-
+    
+    
 def plot_strat(signals, paras):
     df = paras['df']
     short_window = int(paras['short_window'])
@@ -38,7 +45,7 @@ def plot_strat(signals, paras):
     
     fig = plt.figure()
     ax1 = fig.add_subplot(111,  ylabel='Price in $')
-    df['Adj Close'].plot(ax=ax1, color='black', lw=1.)
+    df['Open'].plot(ax=ax1, color='black', lw=1.)
     #Plot the short and long MA
     signals_plot = signals[['short_mavg', 'long_mavg']]
     signals_plot.columns = ['MA({})'.format(short_window), 'MA({})'.format(long_window)]
@@ -56,6 +63,7 @@ def plot_strat(signals, paras):
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.72))
     plt.show()
     
+    
 def score(paras):
     df = paras['df']
     commission = paras['commission']
@@ -67,11 +75,30 @@ def score(paras):
     return -sharpe_ratio
 
 
-def run_strat(ticker, start_date, end_date):
+def run_strat(ticker, start_date, end_date, interval = 'daily'):
     commission = 0.0015
-    
-    df = web.DataReader(ticker, 'yahoo', start_date, end_date)
-    
+    col_dict = {
+         '1. open': 'Open',
+         '2. high': 'High',
+         '3. low': 'Low',
+         '4. close': 'Close',
+         '5. volume': 'Volume'
+    }
+    if interval == '1min':
+        df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
+        df.rename(columns = col_dict, inplace = True) #Rename column of data
+    elif interval == '5min':
+        df, metadata = ts.get_intraday(ticker, interval = '5min', outputsize = 'full')
+        df.rename(columns = col_dict, inplace = True)
+    elif interval == '30min':
+        df, metadata = ts.get_intraday(ticker, interval = '30min', outputsize = 'full')
+        df.rename(columns = col_dict, inplace = True)
+    elif interval == '60min':
+        df, metadata = ts.get_intraday(ticker, interval = '60min', outputsize = 'full')
+        df.rename(columns = col_dict, inplace = True)
+    else:
+        df = web.DataReader(ticker, 'yahoo', start_date, end_date)
+        
     #Tuning hyperparameter
     fspace = {'df': df, 'commission': commission, \
               'short_window':hp.quniform('short_window', 5, 25, 1), \

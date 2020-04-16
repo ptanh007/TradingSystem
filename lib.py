@@ -13,16 +13,16 @@ def compute_portfolio(df, signals, commission):
     # Buy a 100 shares
     position['df'] = 100 * signals['signal']     
     # Initialize the portfolio with value owned   
-    portfolio = position.multiply(df['Adj Close'], axis=0)
+    portfolio = position.multiply(df['Close'], axis=0)
     # Store the difference in shares owned 
     pos_diff = position.diff()
     
     # Add `holdings` to portfolio
-    portfolio['holdings'] = (position.multiply(df['Adj Close'], axis=0)).sum(axis=1)
+    portfolio['holdings'] = (position.multiply(df['Close'], axis=0)).sum(axis=1)
     # Add `cost` to portfolio
-    portfolio['cost'] = 100 * df['Adj Close'] * commission * signals['position'].abs()
+    portfolio['cost'] = 100 * df['Close'] * commission * signals['position'].abs()
     # Add `cash` to portfolio
-    portfolio['cash'] = initial_capital - (pos_diff.multiply(df['Adj Close'], axis=0)).sum(axis=1).cumsum()   
+    portfolio['cash'] = initial_capital - (pos_diff.multiply(df['Close'], axis=0)).sum(axis=1).cumsum()   
     # Add `total` to portfolio
     portfolio['total'] = portfolio['cash'] + portfolio['holdings']    
     # Add `returns` to portfolio
@@ -48,18 +48,16 @@ def plot_portfolio(signals, portfolio):
     plt.show()
 
 # Calculate Sharpe Ratio - Risk free rate element excluded for simplicity
-def annualised_sharpe(returns, N=252):
+def annualised_sharpe(returns, window = 252):
     try:
-        return np.sqrt(N) * (returns.mean() / returns.std())
+        return np.sqrt(window) * (returns.mean() / returns.std())
     except:
         return 0.0
     
-def backtesting(df, portfolio):  
-    # Define a trailing 252 trading day window
-    window = 252
+def backtesting(df, portfolio, window = 252):
     # Calculate the max drawdown in the past window days for eachs day 
-    rolling_max = df['Adj Close'].rolling(window, min_periods=1).max()
-    daily_drawdown = df['Adj Close']/rolling_max - 1.0
+    rolling_max = df['Close'].rolling(window, min_periods=1).max()
+    daily_drawdown = df['Close']/rolling_max - 1.0
     # Calculate the minimum (negative) daily drawdown
     max_daily_drawdown = daily_drawdown.rolling(window, min_periods=1).min()
     
@@ -73,7 +71,7 @@ def backtesting(df, portfolio):
     # Get the number of days in data
     days = (df.index[-1] - df.index[0]).days
     # Calculate the CAGR 
-    cagr = ((((df['Adj Close'][-1]) / df['Adj Close'][1])) ** (365.0/days)) - 1
+    cagr = ((((df['Close'][-1]) / df['Close'][1])) ** (365.0/days)) - 1
     print('CAGR: {:.2%}'.format(cagr))
     
     backtest_data = {
