@@ -16,6 +16,24 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+layout_graph = go.Layout({
+    'xaxis': {
+        'rangeselector': {
+            'buttons': [
+                {'count': 6, 'label': '6M', 'step': 'month',
+                'stepmode': 'backward'},
+                {'count': 1, 'label': '1Y', 'step': 'year',
+                'stepmode': 'backward'},
+                {'count': 1, 'label': 'YTD', 'step': 'year',
+                'stepmode': 'todate'},
+                {'label': 'All', 'step': 'all',
+                'stepmode': 'backward'}
+            ]
+        }
+    }
+})
+
+
 app.layout = html.Div(
     [
         html.H1(children='QT-Trading'),
@@ -173,28 +191,17 @@ def plot_data_graph(ticker, json_report):
     figure = {}
     report_dict = json.loads(json_report)
     
-    layout = go.Layout({'title': ticker,
-#                    'legend': {'orientation': 'h','xanchor':'right'},
-             'xaxis': {
-                 'rangeselector': {
-                     'buttons': [
-                         {'count': 6, 'label': '6M', 'step': 'month',
-                          'stepmode': 'backward'},
-                         {'count': 1, 'label': '1Y', 'step': 'year',
-                          'stepmode': 'backward'},
-                         {'count': 1, 'label': 'YTD', 'step': 'year',
-                          'stepmode': 'todate'},
-                         {'label': 'All', 'step': 'all',
-                          'stepmode': 'backward'}
-                     ]
-                 }}})
-    
     if len(report_dict) > 0:
         df = pd.read_json(report_dict['df'], orient = 'split')
         trace1 = go.Scatter(x = df.index, y = df['Open'], mode = 'lines', name = ticker)
         
-        figure = {'data': [trace1],
-                  'layout': layout}
+        figure = {
+            'data': [trace1],
+            'layout': {
+                'title': ticker,
+                'xaxis': layout_graph['xaxis']
+            }
+        }
     
     return figure
 
@@ -205,22 +212,6 @@ def plot_data_graph(ticker, json_report):
 def plot_signal_graph(ticker, json_report):
     figure = {}
     report_dict = json.loads(json_report)
-    
-    layout = go.Layout({'title': 'Moving Average Crossover',
-#                         'legend': {'orientation': 'h','xanchor':'right'},
-                         'xaxis': {
-                             'rangeselector': {
-                                 'buttons': [
-                                     {'count': 6, 'label': '6M', 'step': 'month',
-                                      'stepmode': 'backward'},
-                                     {'count': 1, 'label': '1Y', 'step': 'year',
-                                      'stepmode': 'backward'},
-                                     {'count': 1, 'label': 'YTD', 'step': 'year',
-                                      'stepmode': 'todate'},
-                                     {'label': 'All', 'step': 'all',
-                                      'stepmode': 'backward'}
-                                 ]
-                             }}})
     
     if len(report_dict) > 0:
         df = pd.read_json(report_dict['df'], orient = 'split')
@@ -243,8 +234,13 @@ def plot_signal_graph(ticker, json_report):
                              mode = 'markers', yaxis = 'y', name = 'Sell', \
                              marker_color = 'red', marker_size = 7)
         
-        
-        figure = {'data': [price], 'layout': layout}
+        figure = {
+            'data': [price],
+            'layout': {
+                'title': 'Moving Average Crossover',
+                'xaxis': layout_graph['xaxis']
+            }
+        }
         figure['data'].append(short_ma)
         figure['data'].append(long_ma)
         figure['data'].append(buy)
@@ -259,40 +255,30 @@ def plot_portfolio_graph(json_report):
     figure = {}
     report_dict = json.loads(json_report)
     
-    layout = go.Layout({'title': 'Portfolio Value in $',
-#                         'legend': {'orientation': 'h','xanchor':'right'},
-                         'xaxis': {
-                             'rangeselector': {
-                                 'buttons': [
-                                     {'count': 6, 'label': '6M', 'step': 'month',
-                                      'stepmode': 'backward'},
-                                     {'count': 1, 'label': '1Y', 'step': 'year',
-                                      'stepmode': 'backward'},
-                                     {'count': 1, 'label': 'YTD', 'step': 'year',
-                                      'stepmode': 'todate'},
-                                     {'label': 'All', 'step': 'all',
-                                      'stepmode': 'backward'}
-                                 ]
-                             }}})
-    
     if len(report_dict) > 0:
+        port_intraday = pd.read_json(report_dict['port_intraday'], orient = 'split')
         signals = pd.read_json(report_dict['signals'], orient = 'split')
-        portfolio = pd.read_json(report_dict['portfolio'], orient = 'split')
         
-        portfolio_value = go.Scatter(x = portfolio.index, y = portfolio['total'], \
+        port_trace = go.Scatter(x = port_intraday.index, y = port_intraday['total'], \
                                      mode = 'lines', name = 'total')
 
-        buy_signal = portfolio[signals['position'] == 1]
+        buy_signal = port_intraday[signals['position'] == 1]
         buy = go.Scatter(x = buy_signal.index, y = buy_signal['total'], \
                              mode = 'markers', yaxis = 'y', name = 'Buy', \
                              marker_color = 'green', marker_size = 7)
-        sell_signal = portfolio[signals['position'] == -1]
+        sell_signal = port_intraday[signals['position'] == -1]
         sell = go.Scatter(x = sell_signal.index, y = sell_signal['total'], \
                              mode = 'markers', yaxis = 'y', name = 'Sell', \
                              marker_color = 'red', marker_size = 7)
         
-        
-        figure = {'data': [portfolio_value], 'layout': layout}
+        figure = {
+            'data': [port_trace],
+            'layout': {
+                'title': 'Portfolio Value in $',
+                'xaxis': layout_graph['xaxis']
+            }
+        }
+                  
         figure['data'].append(buy)
         figure['data'].append(sell)
     
@@ -305,34 +291,25 @@ def plot_drawdown_graph(json_report):
     figure = {}
     report_dict = json.loads(json_report)
     
-    layout = go.Layout({'title': 'Maximum Drawdown',
-#                         'legend': {'orientation': 'h','xanchor':'right'},
-                         'xaxis': {
-                             'rangeselector': {
-                                 'buttons': [
-                                     {'count': 6, 'label': '6M', 'step': 'month',
-                                      'stepmode': 'backward'},
-                                     {'count': 1, 'label': '1Y', 'step': 'year',
-                                      'stepmode': 'backward'},
-                                     {'count': 1, 'label': 'YTD', 'step': 'year',
-                                      'stepmode': 'todate'},
-                                     {'label': 'All', 'step': 'all',
-                                      'stepmode': 'backward'}
-                                 ]
-                             }}})
-    
     if len(report_dict) > 0:
         daily_drawdown = pd.read_json(report_dict['daily_drawdown'], orient = 'split')
         max_daily_drawdown = pd.read_json(report_dict['max_daily_drawdown'], orient = 'split')
         
-        trace1 = go.Scatter(x = daily_drawdown.index, y = daily_drawdown['Close'], \
-                                     mode = 'lines', fill='tozeroy', name = 'daily_drawdown')
-        trace2 = go.Scatter(x = max_daily_drawdown.index, y = max_daily_drawdown['Close'], \
-                                     mode = 'lines', name = 'max_daily_drawdown')
+        trace1 = go.Scatter(x = daily_drawdown.index, y = daily_drawdown['daily_df'], \
+                                     mode = 'lines', fill='tozeroy', name = 'Daily Drawdown')
+        trace2 = go.Scatter(x = max_daily_drawdown.index, y = max_daily_drawdown['daily_df'], \
+                                     mode = 'lines', name = 'Max Daily Drawdown')
         
-        figure = {'data': [trace1, trace2], 'layout': layout}
+        figure = {
+            'data': [trace1, trace2],
+            'layout': {
+                'title': 'Maximum Drawdown',
+                'xaxis': layout_graph['xaxis']
+            }
+        }
 
-    return figure    
+    return figure
+    
     
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -6,12 +6,12 @@ style.use('ggplot')
 
 
 
-def compute_portfolio(df, signals, commission):
+def compute_portfolio(df, signals, commission, interval):
     initial_capital= float(100000.0)
     position = pd.DataFrame(index=signals.index).fillna(0.0)
     
     # Buy a 100 shares
-    position['df'] = 100 * signals['signal']     
+    position['daily_df'] = 100 * signals['signal']     
     # Initialize the portfolio with value owned   
     portfolio = position.multiply(df['Close'], axis=0)
     # Store the difference in shares owned 
@@ -28,7 +28,20 @@ def compute_portfolio(df, signals, commission):
     # Add `returns` to portfolio
     portfolio['returns'] = portfolio['total'].pct_change()
     
-    return portfolio
+    port_intraday = portfolio.copy()
+    
+    if interval != 'daily':
+        temp_sum = portfolio.resample('D').sum()
+        temp_last = portfolio.resample('D').last()
+        portfolio = pd.concat([temp_last[['holdings', 'cash', 'total']], \
+                               temp_sum[['cost', 'returns']]], axis = 1)
+        portfolio['daily_df'] = df['Close'].resample('D').last()
+    else:
+        portfolio['daily_df'] = df['Close']
+    
+    portfolio.dropna(inplace = True)
+    
+    return portfolio, port_intraday
 
 def plot_portfolio(signals, portfolio):
     # Create a figure
@@ -54,10 +67,11 @@ def annualised_sharpe(returns, window = 252):
     except:
         return 0.0
     
-def backtesting(df, portfolio, window = 252):
+def backtesting(portfolio, window = 252):
+    df_close = portfolio['daily_df']
     # Calculate the max drawdown in the past window days for eachs day 
-    rolling_max = df['Close'].rolling(window, min_periods=1).max()
-    daily_drawdown = df['Close']/rolling_max - 1.0
+    rolling_max = df_close.rolling(window, min_periods=1).max()
+    daily_drawdown = df_close/rolling_max - 1.0
     # Calculate the minimum (negative) daily drawdown
     max_daily_drawdown = daily_drawdown.rolling(window, min_periods=1).min()
     
@@ -69,9 +83,9 @@ def backtesting(df, portfolio, window = 252):
     print('Annualized Sharpe ratio: %.2f' % (sharpe_ratio))
     
     # Get the number of days in data
-    days = (df.index[-1] - df.index[0]).days
+    days = (df_close.index[-1] - df_close.index[0]).days
     # Calculate the CAGR 
-    cagr = ((((df['Close'][-1]) / df['Close'][1])) ** (365.0/days)) - 1
+    cagr = ((((df_close[-1]) / df_close[1])) ** (365.0/days)) - 1
     print('CAGR: {:.2%}'.format(cagr))
     
     backtest_data = {

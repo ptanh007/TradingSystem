@@ -67,8 +67,9 @@ def plot_strat(signals, paras):
 def score(paras):
     df = paras['df']
     commission = paras['commission']
+    interval = paras['interval']
     signals = find_signal(paras)
-    portfolio = lib.compute_portfolio(df, signals, commission)
+    portfolio, port_intraday = lib.compute_portfolio(df, signals, commission, interval)
     returns = portfolio['returns']
     # annualized Sharpe ratio
     sharpe_ratio = lib.annualised_sharpe(returns)
@@ -100,19 +101,19 @@ def run_strat(ticker, start_date, end_date, interval = 'daily'):
         df = web.DataReader(ticker, 'yahoo', start_date, end_date)
         
     #Tuning hyperparameter
-    fspace = {'df': df, 'commission': commission, \
+    fspace = {'df': df, 'commission': commission, 'interval': interval, \
               'short_window':hp.quniform('short_window', 5, 25, 1), \
               'long_window':hp.quniform('long_window', 50, 200, 10)}
     
     best = fmin(fn = score, space = fspace, algo = tpe.suggest, max_evals = 100)
     
     #Run strategy with new parameters
-    paras_best = {'df': df, 'commission': commission, \
+    paras_best = {'df': df, 'commission': commission, 'interval': interval, \
                   'short_window': best['short_window'], 'long_window': best['long_window']} 
     signals = find_signal(paras_best)
     
-    portfolio = lib.compute_portfolio(df, signals, commission)
-    backtest_data = lib.backtesting(df, portfolio)
+    portfolio, port_intraday = lib.compute_portfolio(df, signals, commission, interval)
+    backtest_data = lib.backtesting(portfolio)
     backtest_data['optimal_paras'] = {'short_window': best['short_window'], \
                                       'long_window': best['long_window']} 
 
@@ -127,6 +128,7 @@ def run_strat(ticker, start_date, end_date, interval = 'daily'):
             'optimal_paras': backtest_data['optimal_paras'],
             'signals': signals.to_json(orient = 'split', date_format = 'iso'),
             'portfolio': portfolio.to_json(orient = 'split', date_format = 'iso'),
+            'port_intraday': port_intraday.to_json(orient = 'split', date_format = 'iso'),
             }
         
     return report_dict
