@@ -5,6 +5,10 @@ import pandas as pd
 style.use('ggplot')
 
 
+def init():
+    global api_key
+    api_key = 'RNZPXZ6Q9FEFMEHM'
+    
 
 def compute_portfolio(df, signals, commission, interval):
     initial_capital= float(100000.0)
@@ -42,10 +46,11 @@ def compute_portfolio(df, signals, commission, interval):
     portfolio.dropna(inplace = True)
     
     return portfolio, port_intraday
+    
 
 def plot_portfolio(signals, portfolio):
     # Create a figure
-    fig = plt.figure()
+    fig = plt.figure(figsize = (11,4))
     ax1 = fig.add_subplot(111, ylabel='Portfolio value in $')
     # Plot the equity curve in dollars
     portfolio['total'].plot(ax=ax1, lw=2.)
@@ -60,12 +65,14 @@ def plot_portfolio(signals, portfolio):
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.72))
     plt.show()
 
+    
 # Calculate Sharpe Ratio - Risk free rate element excluded for simplicity
 def annualised_sharpe(returns, window = 252):
     try:
         return np.sqrt(window) * (returns.mean() / returns.std())
     except:
         return 0.0
+        
     
 def backtesting(portfolio, window = 252):
     df_close = portfolio['daily_df']

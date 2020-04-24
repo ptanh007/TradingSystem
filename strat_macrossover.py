@@ -12,10 +12,10 @@ import lib
 
 
 #Get data with package alpha_vantage
-api_key = 'RNZPXZ6Q9FEFMEHM'
-ts = TimeSeries(key = api_key, output_format = 'pandas')
+lib.init()
+ts = TimeSeries(key = lib.api_key, output_format = 'pandas')
 
-def find_signal(paras):
+def find_signals(paras):
     df = paras['df']
     short_window = int(paras['short_window'])
     long_window = int(paras['long_window'])
@@ -38,12 +38,12 @@ def find_signal(paras):
     return signals
     
     
-def plot_strat(signals, paras):
+def plot_signals(signals, paras):
     df = paras['df']
     short_window = int(paras['short_window'])
     long_window = int(paras['long_window'])
     
-    fig = plt.figure()
+    fig = plt.figure(figsize = (11,4))
     ax1 = fig.add_subplot(111,  ylabel='Price in $')
     df['Open'].plot(ax=ax1, color='black', lw=1.)
     #Plot the short and long MA
@@ -68,7 +68,7 @@ def score(paras):
     df = paras['df']
     commission = paras['commission']
     interval = paras['interval']
-    signals = find_signal(paras)
+    signals = find_signals(paras)
     portfolio, port_intraday = lib.compute_portfolio(df, signals, commission, interval)
     returns = portfolio['returns']
     # annualized Sharpe ratio
@@ -110,7 +110,7 @@ def run_strat(ticker, start_date, end_date, interval = 'daily'):
     #Run strategy with new parameters
     paras_best = {'df': df, 'commission': commission, 'interval': interval, \
                   'short_window': best['short_window'], 'long_window': best['long_window']} 
-    signals = find_signal(paras_best)
+    signals = find_signals(paras_best)
     
     portfolio, port_intraday = lib.compute_portfolio(df, signals, commission, interval)
     backtest_data = lib.backtesting(portfolio)

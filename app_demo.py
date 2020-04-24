@@ -1,4 +1,5 @@
 import dash
+import dash_table as dt
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
@@ -9,7 +10,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 import strat_macrossover
-
+#import strat_nosellingpressure
 
     
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -77,10 +78,11 @@ app.layout = html.Div(
         html.Br(),
         html.Button('Run Strategy', id = 'button_run'),
         html.Div(id = 'output_performance'),
-        dcc.Graph(id='data_graph'),
-        dcc.Graph(id='signal_graph'),
-        dcc.Graph(id='portfolio_graph'),
-        dcc.Graph(id='drawdown_graph'),
+        html.Div(id = 'stats_info'),
+
+        dcc.Graph(id = 'graph_signals'),
+        dcc.Graph(id = 'graph_portfolio'),
+        dcc.Graph(id = 'graph_drawdown'),
 
         # Hidden div inside the app that stores the intermediate value
         html.Div(id = 'json_report', style = {'display': 'none'}),
@@ -178,38 +180,56 @@ def update_performance(json_report):
                ), start_date, end_date
     else:
         return None, start_date, end_date
-               
-    
+        
+        
 @app.callback(
-    Output('data_graph', 'figure'),
+    Output('stats_info', 'children'),
     [
         Input('input_ticker', 'value'),
         Input('json_report', 'children')
     ]
 )
-def plot_data_graph(ticker, json_report):
-    figure = {}
+def update_stats_info(ticker, json_report):
     report_dict = json.loads(json_report)
-    
+
     if len(report_dict) > 0:
         df = pd.read_json(report_dict['df'], orient = 'split')
-        trace1 = go.Scatter(x = df.index, y = df['Open'], mode = 'lines', name = ticker)
-        
-        figure = {
-            'data': [trace1],
+        stats_df = df.describe(include = 'all')
+        stats_df.reset_index(inplace = True)
+
+        # Update graph data
+        trace_open = go.Histogram(x = df['Open'], histnorm = 'probability', name = 'Open')
+        trace_volume = go.Histogram(x = df['Volume'], histnorm = 'probability', name = 'Volume')
+        fig = {
+            'data': [trace_open, trace_volume],
             'layout': {
                 'title': ticker,
-                'xaxis': layout_graph['xaxis']
+                'barmode': 'overlay'
             }
         }
+        
+        return html.Div(
+                   [
+                       html.H2(children = 'Descriptive Statistics'),
+                       html.Div(
+                           [
+                               dt.DataTable(
+                                   columns = [{'name': i, 'id': i} for i in stats_df.columns],
+                                   data = stats_df.to_dict('records')
+                               ),
+                           ], style = {'display': 'inline-block'}
+                       ),
+                       dcc.Graph(figure = fig),
+                   ]
+               )
+    else:
+        return None
+                   
     
-    return figure
-
-    
-@app.callback(Output('signal_graph', 'figure'),
+@app.callback(Output('graph_signals', 'figure'),
               [Input('input_ticker', 'value'),
                Input('json_report', 'children')])
-def plot_signal_graph(ticker, json_report):
+def plot_graph_signals(ticker, json_report):
     figure = {}
     report_dict = json.loads(json_report)
     
@@ -249,9 +269,9 @@ def plot_signal_graph(ticker, json_report):
     return figure
     
 
-@app.callback(Output('portfolio_graph', 'figure'),
+@app.callback(Output('graph_portfolio', 'figure'),
               [Input('json_report', 'children')])
-def plot_portfolio_graph(json_report):
+def plot_graph_portfolio(json_report):
     figure = {}
     report_dict = json.loads(json_report)
     
@@ -285,9 +305,9 @@ def plot_portfolio_graph(json_report):
     return figure
 
     
-@app.callback(Output('drawdown_graph', 'figure'),
+@app.callback(Output('graph_drawdown', 'figure'),
               [Input('json_report', 'children')])
-def plot_drawdown_graph(json_report):
+def plot_graph_drawdown(json_report):
     figure = {}
     report_dict = json.loads(json_report)
     
