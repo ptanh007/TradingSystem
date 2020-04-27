@@ -1,6 +1,6 @@
 alpha_vantage
 datetime
-dateutil
+python-dateutil
 numpy
 pandas
 pandas_datareader
