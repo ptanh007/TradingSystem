@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import pandas_datareader.data as web
 from alpha_vantage.timeseries import TimeSeries
@@ -35,8 +36,8 @@ def find_signals(paras):
     signals['signal'] = 0.0
 
     # Create short and long EMA
-    signals['short_ema'] = df['Close'].ewm(span=short_window, adjust=False).mean()
-    signals['long_ema'] = df['Close'].ewm(span=long_window, adjust=False).mean()
+    signals['short_mavg'] = df['Close'].ewm(span=short_window, adjust=False).mean()
+    signals['long_mavg'] = df['Close'].ewm(span=long_window, adjust=False).mean()
     signals['average_vol'] = [np.mean(signals['Volume'][:i]) for i in range(len(signals))]
     signals['average_spread'] = [np.mean(signals['Spread'][:i]) for i in range(len(signals))]
 
@@ -46,12 +47,12 @@ def find_signals(paras):
             continue
         else: 
             if open_position: 
-                if signals['short_ema'][i] < signals['long_ema'][i]: 
+                if signals['short_mavg'][i] < signals['long_mavg'][i]: 
                     signals.signal[i] = -1
                     open_position = False
             else: 
 
-                if no_selling_presure and signals['short_ema'][i] > signals['long_ema'][i] \
+                if no_selling_presure and signals['short_mavg'][i] > signals['long_mavg'][i] \
                 and signals['Volume'][i] > volume_factor*signals.average_vol[i]:
                     signals.signal[i] = 1
                     open_position = True
@@ -62,7 +63,7 @@ def find_signals(paras):
                         no_selling_presure = True
                         signal_waiting = False
                 else:
-                    if signals.Close[i] > signals.long_ema[i]: 
+                    if signals.Close[i] > signals.long_mavg[i]: 
                         uptrend+=1 
                     if uptrend>2: 
                         signal_waiting = True    
@@ -82,7 +83,7 @@ def plot_signals(signals, paras):
     ax1 = fig.add_subplot(111,  ylabel='Price in $')
     df['Open'].plot(ax=ax1, color='black', lw=1.)
     #Plot the short and long MA
-    signals_plot = signals[['short_ema', 'long_ema']]
+    signals_plot = signals[['short_mavg', 'long_mavg']]
     signals_plot.columns = ['EMA({})'.format(short_window), 'EMA({})'.format(long_window)]
     signals_plot.plot(ax=ax1, lw=1.5)
     
@@ -111,7 +112,7 @@ def score(paras):
     return -sharpe_ratio
 
 
-def run_strat(ticker, start_date, end_date, interval = 'daily'):
+def run_strat(tab, filename, ticker, start_date, end_date, interval = 'daily'):
     commission = 0.0015
     col_dict = {
          '1. open': 'Open',
@@ -120,20 +121,25 @@ def run_strat(ticker, start_date, end_date, interval = 'daily'):
          '4. close': 'Close',
          '5. volume': 'Volume'
     }
-    if interval == '1min':
-        df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True) #Rename column of data
-    elif interval == '5min':
-        df, metadata = ts.get_intraday(ticker, interval = '5min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True)
-    elif interval == '30min':
-        df, metadata = ts.get_intraday(ticker, interval = '30min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True)
-    elif interval == '60min':
-        df, metadata = ts.get_intraday(ticker, interval = '60min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True)
-    else:
-        df = web.DataReader(ticker, 'yahoo', start_date, end_date)
+    if tab == 'local':
+        interval = '5min'
+        df = pd.read_csv(filename[0], index_col='DateTime')
+        df.index = pd.to_datetime(df.index)
+    elif tab == 'online':
+        if interval == '1min':
+            df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True) #Rename column of data
+        elif interval == '5min':
+            df, metadata = ts.get_intraday(ticker, interval = '5min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True)
+        elif interval == '30min':
+            df, metadata = ts.get_intraday(ticker, interval = '30min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True)
+        elif interval == '60min':
+            df, metadata = ts.get_intraday(ticker, interval = '60min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True)
+        else:
+            df = web.DataReader(ticker, 'yahoo', start_date, end_date)
         
     #Tuning hyperparameter
     fspace = {
@@ -143,9 +149,10 @@ def run_strat(ticker, start_date, end_date, interval = 'daily'):
         'spread_factor': hp.quniform('spread_factor', 0.1, 1, 0.1),
         'volume_factor': hp.quniform('volume_factor', 1, 2, 0.1)
     }
-    
-    best = fmin(fn = score, space = fspace, algo = tpe.suggest, max_evals = 100)
-    
+    # It takes 60s/trial, need to optimize
+#    best = fmin(fn = score, space = fspace, algo = tpe.suggest, max_evals = 100)
+    best = {'long_window': 200.0, 'short_window': 9.0, 'spread_factor': 0.4, 'volume_factor': 1.3}
+ 
     #Run strategy with new parameters
     paras_best = {
         'df': df, 'commission': commission, 'interval': interval,

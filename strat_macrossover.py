@@ -76,7 +76,7 @@ def score(paras):
     return -sharpe_ratio
 
 
-def run_strat(ticker, start_date, end_date, interval = 'daily'):
+def run_strat(tab, filename, ticker, start_date, end_date, interval = 'daily'):
     commission = 0.0015
     col_dict = {
          '1. open': 'Open',
@@ -85,20 +85,25 @@ def run_strat(ticker, start_date, end_date, interval = 'daily'):
          '4. close': 'Close',
          '5. volume': 'Volume'
     }
-    if interval == '1min':
-        df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True) #Rename column of data
-    elif interval == '5min':
-        df, metadata = ts.get_intraday(ticker, interval = '5min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True)
-    elif interval == '30min':
-        df, metadata = ts.get_intraday(ticker, interval = '30min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True)
-    elif interval == '60min':
-        df, metadata = ts.get_intraday(ticker, interval = '60min', outputsize = 'full')
-        df.rename(columns = col_dict, inplace = True)
-    else:
-        df = web.DataReader(ticker, 'yahoo', start_date, end_date)
+    if tab == 'local':
+        interval = '5min'
+        df = pd.read_csv(filename[0], index_col='DateTime')
+        df.index = pd.to_datetime(df.index)
+    elif tab == 'online':
+        if interval == '1min':
+            df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True) #Rename column of data
+        elif interval == '5min':
+            df, metadata = ts.get_intraday(ticker, interval = '5min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True)
+        elif interval == '30min':
+            df, metadata = ts.get_intraday(ticker, interval = '30min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True)
+        elif interval == '60min':
+            df, metadata = ts.get_intraday(ticker, interval = '60min', outputsize = 'full')
+            df.rename(columns = col_dict, inplace = True)
+        else:
+            df = web.DataReader(ticker, 'yahoo', start_date, end_date)
         
     #Tuning hyperparameter
     fspace = {'df': df, 'commission': commission, 'interval': interval, \

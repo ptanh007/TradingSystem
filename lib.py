@@ -9,7 +9,43 @@ def init():
     global api_key
     api_key = 'RNZPXZ6Q9FEFMEHM'
     
+def preprocessing(df):
+    col_dict = {
+        'TOTALVOL': 'Volume', 'TRADINGDATE': 'Date', 'TRADINGTIME': 'Time', 'OPENPRICE': 'Open',
+        'LASTPRICE': 'Close','HIGHPRICE': 'High','LOWPRICE': 'Low','TOTALQTTY': 'Volume'
+    }
+    df = df[
+        ['TRADINGDATE', 'TRADINGTIME', 'OPENPRICE', 'LASTPRICE', 'HIGHPRICE',
+        'LOWPRICE','TOTALQTTY']
+    ]
+    df.reset_index(inplace = True, drop = True)
+    df.rename(columns = col_dict,inplace=True)
+    df['DateTime'] = df['Date'] + ' ' + df['Time']
+    df['DateTime'] = pd.to_datetime(df['DateTime'],format='%d-%b-%y %H:%M:%S')
+    df.sort_values(by = ['DateTime'],inplace=True)
+    df.drop_duplicates(subset=['DateTime'],keep='last',inplace=True)
+    df.set_index('DateTime',inplace=True)
+    df.drop(['Time'],axis=1,inplace=True)
+    df = df[df.index.year > 2017]
+    # df.reset_index(inplace=True)
 
+    df_price = df[['Open','High','Low','Close']]
+    df_vol = df['Volume']
+    df_price = df_price.resample('5min').bfill()
+    df_vol = df_vol.resample('5min').sum()
+    df = pd.concat([df_price,df_vol],axis=1)
+    df['Date'] = df.index.date
+
+#    df['QChange'] = df.Volume.diff()
+#    df['PChange'] = df.Close.diff()
+#    df = df[df.QChange != 0][df.Close != 0]
+#    df['Return'] = np.log((df.Close)/df.Close.shift(1)).dropna()*100
+    df = df[['Open','High','Low','Close','Volume']]
+    print(df.head())
+
+    return df
+    
+    
 def compute_portfolio(df, signals, commission, interval):
     initial_capital= float(100000.0)
     position = pd.DataFrame(index=signals.index).fillna(0.0)
