@@ -40,7 +40,7 @@ app.layout = html.Div(
         html.H1(children='Trading Demo'),
         html.Div(  
             [
-                html.Div('Data Frequency',
+                html.Div('Data Frequency:',
                     style = {'display': 'inline-block', 'margin': 10}
                 ),
                 dcc.Dropdown(
@@ -109,6 +109,28 @@ app.layout = html.Div(
                 ]
             )
         ]),
+        html.Div(  
+            [
+                html.Div('Select Strategy:',
+                    style = {'display': 'inline-block', 'margin': 10}
+                ),
+                dcc.Dropdown(
+                    id = 'strategy',
+                    options = [
+                        {'label': 'MA Crossover', 'value': 'macrossover'},
+                        {'label': 'No Selling Pressure', 'value': 'nosellingpressure'}
+                    ],
+                    value = 'macrossover',
+                    searchable = False,
+                    placeholder = 'Select a strategy',
+                    style = {
+                        'width': 200,
+                        'display': 'inline-block',
+                        'verticalAlign': 'middle'
+                    }
+                )
+            ], 
+        ),
         html.Br(),
         html.Button('Run Strategy', id = 'button_run'),
         html.Div(id = 'output_performance'),
@@ -183,18 +205,25 @@ def update_output_online(button_disabled, ticker, start_date, end_date, interval
     [Input('button_run', 'n_clicks')],
     [
         State('tabs_data', 'value'),
+        State('upload_data', 'contents'),
         State('upload_data', 'filename'),
+        State('strategy', 'value'),
         State('input_ticker', 'value'),
         State('daterange', 'start_date'),
         State('daterange', 'end_date'),
         State('interval', 'value')
     ]
 )
-def run_macrossover(n_clicks, tab, filename, ticker, start_date, end_date, interval):
+def run_strategy(n_clicks, tab, list_of_contents, list_of_names, strategy,
+                 ticker, start_date, end_date, interval):
     report_dict = {}
     if n_clicks:
-        report_dict = strat_nosellingpressure.run_strat(tab, filename, ticker, \
-                                                  start_date, end_date, interval)
+        if strategy == 'macrossover':
+            report_dict = strat_macrossover.run_strat(tab, list_of_contents, list_of_names, \
+                                                        ticker, start_date, end_date, interval)
+        elif strategy == 'nosellingpressure':
+            report_dict = strat_nosellingpressure.run_strat(tab, list_of_contents, list_of_names, \
+                                                        ticker, start_date, end_date, interval)
         
     return json.dumps(report_dict)
 

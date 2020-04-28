@@ -199,10 +199,10 @@ def update_output_online(button_disabled, ticker, start_date, end_date, interval
         State('interval', 'value')
     ]
 )
-def run_macrossover(n_clicks, tab, filename, ticker, start_date, end_date, interval):
+def run_strategy(n_clicks, tab, list_of_contents, list_of_names, ticker, start_date, end_date, interval):
     report_dict = {}
     if n_clicks:
-        report_dict = strat_nosellingpressure.run_strat(tab, filename, ticker, \
+        report_dict = strat_nosellingpressure.run_strat(tab, list_of_contents, list_of_names, ticker, \
                                                   start_date, end_date, interval)
         
     return json.dumps(report_dict)

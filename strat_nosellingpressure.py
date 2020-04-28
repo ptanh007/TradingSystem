@@ -1,3 +1,5 @@
+import base64
+import io
 import pandas as pd
 import numpy as np
 import pandas_datareader.data as web
@@ -112,7 +114,7 @@ def score(paras):
     return -sharpe_ratio
 
 
-def run_strat(tab, filename, ticker, start_date, end_date, interval = 'daily'):
+def run_strat(tab, list_of_contents, list_of_names, ticker, start_date, end_date, interval = 'daily'):
     commission = 0.0015
     col_dict = {
          '1. open': 'Open',
@@ -123,8 +125,18 @@ def run_strat(tab, filename, ticker, start_date, end_date, interval = 'daily'):
     }
     if tab == 'local':
         interval = '5min'
-        df = pd.read_csv(filename[0], index_col='DateTime')
-        df.index = pd.to_datetime(df.index)
+        pairs = zip(list_of_contents, list_of_names)
+        for content, name in pairs:
+            content_type, content_string = content.split(',')
+            decoded = base64.b64decode(content_string)
+            if 'csv' in name:
+                # Assume that the user uploaded a CSV file
+                df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+            elif 'xls' in name:
+                # Assume that the user uploaded an excel file
+                df = pd.read_excel(io.BytesIO(decoded))
+            df.set_index('DateTime', inplace = True)
+            df.index = pd.to_datetime(df.index)
     elif tab == 'online':
         if interval == '1min':
             df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
@@ -150,8 +162,10 @@ def run_strat(tab, filename, ticker, start_date, end_date, interval = 'daily'):
         'volume_factor': hp.quniform('volume_factor', 1, 2, 0.1)
     }
     # It takes 60s/trial, need to optimize
-#    best = fmin(fn = score, space = fspace, algo = tpe.suggest, max_evals = 100)
-    best = {'long_window': 200.0, 'short_window': 9.0, 'spread_factor': 0.4, 'volume_factor': 1.3}
+    best = fmin(fn = score, space = fspace, algo = tpe.suggest, max_evals = 3)
+    print(best)
+    
+#    best = {'long_window': 200.0, 'short_window': 9.0, 'spread_factor': 0.4, 'volume_factor': 1.3}
  
     #Run strategy with new parameters
     paras_best = {
