@@ -13,7 +13,7 @@ DEBUG = True
 SECRET_KEY = 'This is an UNSECURE Secret. CHANGE THIS for production environments.'
 
 # SQLAlchemy settings
-SQLALCHEMY_DATABASE_URI = 'sqlite:///../app.sqlite'
+SQLALCHEMY_DATABASE_URI = 'sqlite:///../userdb.sqlite'
 SQLALCHEMY_TRACK_MODIFICATIONS = False    # Avoids a SQLAlchemy Warning
 SESSION_TYPE = 'sqlalchemy'
 
@@ -24,9 +24,9 @@ MAIL_SERVER = 'smtp.gmail.com'
 MAIL_PORT = 587
 MAIL_USE_SSL = False
 MAIL_USE_TLS = True
-MAIL_USERNAME = 'members.qtdata@gmail.com'
+MAIL_USERNAME = 'developer.qtdata@gmail.com'
 MAIL_PASSWORD = 'qtmember@2020'
-MAIL_DEFAULT_SENDER = '"QT_TradingSystem" <members.qtdata@gmail.com>'
+MAIL_DEFAULT_SENDER = '"QT-TradingSystem" <members.qtdata@gmail.com>'
 ADMINS = [
-    '"Admin One" <phamtuanh@gmail.com>',
+    '"Admin One" <members.qtdata@gmail.com>',
     ]

@@ -5,7 +5,7 @@
 import os
 
 # Application settings
-APP_NAME = "Trading System Starter App"
+APP_NAME = "QT-Group, Trading System"
 APP_SYSTEM_ERROR_SUBJECT_LINE = APP_NAME + " system error"
 
 # Flask settings

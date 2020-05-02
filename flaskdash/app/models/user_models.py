@@ -2,6 +2,8 @@
 #
 # Authors: Ling Thio <ling.thio@gmail.com>, Matt Hogan <matt@twintechlabs.io>
 
+import datetime
+
 from flask_user import UserMixin
 from flask_user.forms import RegisterForm
 from flask_wtf import FlaskForm
@@ -24,6 +26,10 @@ class User(db.Model, UserMixin):
     # User information
     active = db.Column('is_active', db.Boolean(), nullable=False, server_default='0')
     full_name = db.Column(db.Unicode(100), nullable=False, server_default=u'')
+
+    # TradingSystem
+    trading_plan = db.Column(db.Integer, nullable=False, default=0)
+    trading_expired = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow())
 
     # Relationships
     roles = db.relationship('Role', secondary='users_roles',
