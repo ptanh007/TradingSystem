@@ -1,9 +1,10 @@
 import dash_core_components as dcc
 import dash_html_components as html
+from flask import session
 
 layout = html.Div([
                 html.H1(children='QT-Trading'),
-                html.Label(id='username'),
+                #html.Label(id='username', children=session.get("username")),
                 html.Div(dcc.Input(id = 'input_ticker', type = 'text', debounce=True,
                                    placeholder='Enter a stock symbol here...',
                                    style ={ 'width': 150, 'margin': 10})),   

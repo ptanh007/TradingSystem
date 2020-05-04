@@ -57,6 +57,10 @@ def create_app(extra_config_settings={}):
     # Setup WTForms CSRFProtect
     csrf_protect.init_app(app)
 
+    # dash
+    register_dashapps(app)
+    csrf_protect._exempt_views.add('dash.dash.dispatch')
+
     # Register blueprints
     from app.controllers.controller1 import main_blueprint
     from app.controllers.apis import api_blueprint
@@ -82,8 +86,6 @@ def create_app(extra_config_settings={}):
     from .controllers.controller1 import user_profile_page
 
     user_manager = UserManager(app, db, User)
-
-    register_dashapps(app)
 
     return app
 
@@ -125,20 +127,20 @@ def init_email_error_handler(app):
     # Log errors using: app.logger.error('Some error message')
 
 def register_dashapps(app):
-    from app.dashapp1.layout import layout
-    from app.dashapp1.callbacks import register_callbacks
+    from app.tradingapp.layout import layout
+    from app.tradingapp.callbacks import register_callbacks
 
     # Meta tags for viewport responsiveness
     meta_viewport = {"name": "viewport", "content": "width=device-width, initial-scale=1, shrink-to-fit=no"}
 
     dashapp1 = dash.Dash(__name__,
                          server=app,
-                         url_base_pathname='/dashboard/',
+                         url_base_pathname='/trading/',
                          assets_folder=get_root_path(__name__) + '/dashboard/assets/',
                          meta_tags=[meta_viewport])
 
     with app.app_context():
-        dashapp1.title = 'Dashapp 1'
+        dashapp1.title = 'QT-Trading'
         dashapp1.layout = layout
         register_callbacks(dashapp1)
 

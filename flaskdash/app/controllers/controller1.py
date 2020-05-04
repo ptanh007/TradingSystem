@@ -19,6 +19,9 @@ def member_page():
     if not current_user.is_authenticated:
         return redirect(url_for('user.login'))
 
+    session['username'] = current_user.email
+    session['trading_plan'] = current_user.trading_plan
+    session['trading_expired'] = current_user.trading_expired
     return render_template('views/controller1/member_base.html')
 
 # The Admin page is accessible to users with the 'admin' role

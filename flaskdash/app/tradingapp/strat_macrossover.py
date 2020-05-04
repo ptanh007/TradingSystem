@@ -6,7 +6,7 @@ import pandas_datareader.data as web
 from hyperopt import hp, tpe, fmin
 style.use('ggplot')
 
-from app.dashapp1 import lib
+from app.tradingapp import lib
 
 
 def find_signal(paras):

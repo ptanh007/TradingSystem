@@ -5,8 +5,11 @@ import pandas as pd
 import json
 import plotly.graph_objs as go
 
-from app.dashapp1 import strat_macrossover
+from app.tradingapp import strat_macrossover
 from flask import session
+import logging
+
+logger = logging.getLogger(__name__)
 
 def register_callbacks(dashapp):
     @dashapp.callback(Output('button_run', 'disabled'),
@@ -14,9 +17,10 @@ def register_callbacks(dashapp):
            Input('daterange', 'start_date'),
            Input('daterange', 'end_date')])
     def update_button(ticker, start_date, end_date):
-        #with dashapp.server
+        logger.info('username')
+        logging.info(session['username'])
+        logging.info(session['trading_plan'])
         dashapp.logger.info(ticker)
-
         if ticker is None or len(ticker) == 0 or start_date is None or end_date is None:
             return True
         else:
@@ -28,6 +32,8 @@ def register_callbacks(dashapp):
          Input('daterange', 'start_date'),
          Input('daterange', 'end_date')])
     def update_info(ticker, start_date, end_date):
+        #logger.info('start_date')
+        logging.info(session['username'])
         return 'Get data: {} from {} to {}'.format(ticker, start_date, end_date)
     
         
