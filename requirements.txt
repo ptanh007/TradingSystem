@@ -1,5 +1,4 @@
 alpha_vantage
-datetime
 python-dateutil
 numpy
 pandas
