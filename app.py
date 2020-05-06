@@ -10,7 +10,6 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 import strat_macrossover
-import strat_nosellingpressure
 
 import flask
 import os
@@ -126,7 +125,6 @@ def serve_layout():
                         id = 'strategy',
                         options = [
                             {'label': 'MA Crossover', 'value': 'macrossover'},
-                            {'label': 'No Selling Pressure', 'value': 'nosellingpressure'}
                         ],
                         value = 'macrossover',
                         searchable = False,
@@ -229,9 +227,6 @@ def run_strategy(n_clicks, tab, list_of_contents, list_of_names, strategy,
     if n_clicks:
         if strategy == 'macrossover':
             report_dict = strat_macrossover.run_strat(tab, list_of_contents, list_of_names, \
-                                                        ticker, start_date, end_date, interval)
-        elif strategy == 'nosellingpressure':
-            report_dict = strat_nosellingpressure.run_strat(tab, list_of_contents, list_of_names, \
                                                         ticker, start_date, end_date, interval)
         
     return json.dumps(report_dict)
