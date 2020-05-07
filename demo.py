@@ -16,7 +16,7 @@ from alpha_vantage.timeseries import TimeSeries
 
 import lib
 import strat_macrossover
-
+import strat_bollingerbands
 
 
 #Get data with package alpha_vantage
@@ -127,6 +127,7 @@ app.layout = html.Div(
                     id = 'strategy',
                     options = [
                         {'label': 'MA Crossover', 'value': 'macrossover'},
+                        {'label': 'Bollinger Bands', 'value': 'bollingerbands'}
                     ],
                     value = 'macrossover',
                     searchable = False,
@@ -269,6 +270,8 @@ def run_strategy(n_clicks, tab, contents, filename, strategy, ticker, start_date
                 
         if strategy == 'macrossover':
             report_dict = strat_macrossover.run_strat(df, interval)
+        elif strategy == 'bollingerbands':
+            report_dict = strat_bollingerbands.run_strat(df, interval)
         
     return json.dumps(report_dict)
 
@@ -360,33 +363,60 @@ def plot_graph_signals(ticker, json_report):
     if len(report_dict) > 0:
         df = pd.read_json(report_dict['df'], orient = 'split')
         signals = pd.read_json(report_dict['signals'], orient = 'split')
+        strategy = report_dict['strategy']
         optimal_paras = report_dict['optimal_paras']
         
         price = go.Scatter(x = df.index, y = df['Open'], mode = 'lines', name = ticker)
-        
-        short_ma = go.Scatter(x = df.index, y = signals['short_mavg'], mode = 'lines', yaxis = 'y', \
-                             name = 'MA({})'.format(optimal_paras['short_window']))
-        long_ma = go.Scatter(x = df.index, y = signals['long_mavg'], mode = 'lines', yaxis = 'y', \
-                             name = 'MA({})'.format(optimal_paras['long_window']))
-        
-        buy_signal = signals[signals['position'] == 1]
-        buy = go.Scatter(x = buy_signal.index, y = buy_signal['short_mavg'], \
+
+        if strategy == 'macrossover':
+            buy_signal = signals[signals['position'] == 1]
+            sell_signal = signals[signals['position'] == -1]
+
+            trace1 = go.Scatter(x = df.index, y = signals['short_mavg'], mode = 'lines', yaxis = 'y', \
+                                 name = 'MA({})'.format(optimal_paras['short_window']))
+            trace2 = go.Scatter(x = df.index, y = signals['long_mavg'], mode = 'lines', yaxis = 'y', \
+                                 name = 'MA({})'.format(optimal_paras['long_window']))
+            
+            buy = go.Scatter(x = buy_signal.index, y = buy_signal['short_mavg'], \
                              mode = 'markers', yaxis = 'y', name = 'Buy', \
                              marker_color = 'green', marker_size = 7)
-        sell_signal = signals[signals['position'] == -1]
-        sell = go.Scatter(x = sell_signal.index, y = sell_signal['short_mavg'], \
+            sell = go.Scatter(x = sell_signal.index, y = sell_signal['short_mavg'], \
                              mode = 'markers', yaxis = 'y', name = 'Sell', \
                              marker_color = 'red', marker_size = 7)
-        
-        figure = {
-            'data': [price],
-            'layout': {
-                'title': 'Moving Average Crossover',
-                'xaxis': layout_graph['xaxis']
+            
+            figure = {
+                'data': [price],
+                'layout': {
+                    'title': 'Moving Average Crossover',
+                    'xaxis': layout_graph['xaxis']
+                }
             }
-        }
-        figure['data'].append(short_ma)
-        figure['data'].append(long_ma)
+        elif strategy == 'bollingerbands':
+            buy_signal = df[signals['position'] == 1]
+            sell_signal = df[signals['position'] == -1]
+
+            trace1 = go.Scatter(x = df.index, y = signals['bollinger_high'], mode = 'lines', yaxis = 'y', \
+                                 name = 'Bollinger High')
+            trace2 = go.Scatter(x = df.index, y = signals['bollinger_low'], mode = 'lines', yaxis = 'y', \
+                                 name = 'Bollinger Low')
+            
+            buy = go.Scatter(x = buy_signal.index, y = buy_signal['Open'], \
+                                 mode = 'markers', yaxis = 'y', name = 'Buy', \
+                                 marker_color = 'green', marker_size = 7)
+            sell = go.Scatter(x = sell_signal.index, y = sell_signal['Open'], \
+                                 mode = 'markers', yaxis = 'y', name = 'Sell', \
+                                 marker_color = 'red', marker_size = 7)
+        
+            figure = {
+                'data': [price],
+                'layout': {
+                    'title': 'Bollinger Bands',
+                    'xaxis': layout_graph['xaxis']
+                }
+            }
+            
+        figure['data'].append(trace1)
+        figure['data'].append(trace2)
         figure['data'].append(buy)
         figure['data'].append(sell)
     
