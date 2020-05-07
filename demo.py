@@ -74,6 +74,7 @@ app.layout = html.Div(
             ),
             dcc.Tab(
                 label = 'Get Data Online', value = 'online', children = [
+                    html.Br(),                                                    
                     dcc.Input(
                     id = 'input_ticker', type = 'text', debounce = True,
                     placeholder='Enter a stock symbol here...',
@@ -294,7 +295,7 @@ def update_performance(json_report):
         start_date = df.index[0].strftime("%Y-%m-%d")
         end_date = df.index[-1].strftime("%Y-%m-%d")
         return html.Div(
-                   [
+                   [    html.Br(),
                         html.P("Commision fee: {:.2%}".format(commission)),
                         html.P("Cummulative return: {:.2%}".format(cummulative_return)),
                         html.P("Annualized Sharpe ratio: {:.2f}".format(sharpe_ratio)),

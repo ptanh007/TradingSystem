@@ -1,11 +1,12 @@
+dash
 alpha_vantage
-python-dateutil
+hyperopt
+scipy
+matplotlib
 numpy
 pandas
 pandas_datareader
-hyperopt
-matplotlib
 plotly
-dash
+python-dateutil
 Flask
 gunicorn

@@ -23,6 +23,7 @@ dash-html-components==1.0.3
 dash-renderer==1.4.0
 dash-table==4.6.2
 hyperopt==0.2.4
+scipy==1.4.1
 matplotlib==1.5.3
 numpy==1.18.4
 pandas==0.24.2
