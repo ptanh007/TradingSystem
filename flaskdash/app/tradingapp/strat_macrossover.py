@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot')
 
-import lib
+from app.tradingapp import lib
 
 
 

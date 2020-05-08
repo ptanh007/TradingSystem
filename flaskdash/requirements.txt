@@ -1,4 +1,4 @@
-# This file is used by pip to install required python packages.
+# This file is used by pip to install required python packages
 # Usage: pip install -r requirements.txt
 
 # Flask Framework
@@ -30,6 +30,7 @@ pandas==0.24.2
 pandas-datareader==0.8.1
 plotly==4.6.0
 python-dateutil==2.5.3
+SQLAlchemy==1.1.0
 
 # Automated tests
 pytest==3.0.5
