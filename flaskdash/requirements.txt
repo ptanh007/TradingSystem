@@ -16,20 +16,16 @@ Flask-Session
 email_validator
 
 # Dash Trading
+dash==1.12.0
+pandas-datareader==0.8.1
 alpha-vantage==2.2.0
-dash==1.11.0
-dash-core-components==1.9.1
-dash-html-components==1.0.3
-dash-renderer==1.4.0
-dash-table==4.6.2
 hyperopt==0.2.4
 scipy==1.4.1
-matplotlib==1.5.3
-numpy==1.18.4
-pandas==0.24.2
-pandas-datareader==0.8.1
-plotly==4.6.0
-python-dateutil==2.5.3
+matplotlib
+numpy
+pandas
+plotly
+python-dateutil
 SQLAlchemy==1.1.0
 
 # Automated tests

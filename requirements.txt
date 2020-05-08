@@ -1,11 +1,11 @@
-dash
-alpha_vantage
-hyperopt
-scipy
+dash==1.12.0
+pandas-datareader==0.8.1
+alpha-vantage==2.2.0
+hyperopt==0.2.4
+scipy==1.4.1
 matplotlib
 numpy
 pandas
-pandas_datareader
 plotly
 python-dateutil
 Flask
