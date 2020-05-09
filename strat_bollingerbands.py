@@ -1,32 +1,39 @@
 import pandas as pd
-import numpy as np
 from hyperopt import hp, tpe, fmin
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot')
 
-from app.tradingapp import lib
+import lib
 
 
 
 def find_signals(paras):
     df = paras['df']
-    short_window = int(paras['short_window'])
-    long_window = int(paras['long_window'])
-        
+    window = int(paras['window'])
+    no_of_std = paras['std']
+
     # Initialize the `signals` DataFrame with the `signal` column
     signals = pd.DataFrame(index=df.index)
-    signals['signal'] = 0.0
+    signals['signal'] = None
+
+    rolling_mean = df['Open'].rolling(window).mean()
+    rolling_std = df['Open'].rolling(window).std()
     
-    # Create short and long MA
-    signals['short_mavg'] = df['Open'].rolling(window=short_window, min_periods=1, center=False).mean()
-    signals['long_mavg'] = df['Open'].rolling(window=long_window, min_periods=1, center=False).mean()
+    signals['bollinger_high'] = rolling_mean + (rolling_std * no_of_std)
+    signals['bollinger_low'] = rolling_mean - (rolling_std * no_of_std)
     
-    # Create signals
-    signals['signal'][short_window:] = np.where(signals['short_mavg'][short_window:] 
-                                                > signals['long_mavg'][short_window:], 1.0, 0.0)   
+    for row in range(len(df)):
+        if (df['Open'].iloc[row] > signals['bollinger_high'].iloc[row]) and (df['Open'].iloc[row-1] < signals['bollinger_high'].iloc[row-1]):
+            signals['signal'].iloc[row] = 0.0
+        
+        if (df['Open'].iloc[row] < signals['bollinger_low'].iloc[row]) and (df['Open'].iloc[row-1] > signals['bollinger_low'].iloc[row-1]):
+            signals['signal'].iloc[row] = 1
+            
+    signals['signal'].fillna(method='ffill',inplace=True)
     
     # Generate trading orders
+    signals['signal'].fillna(0.0, inplace=True)    
     signals['position'] = signals['signal'].diff()
     
     return signals
@@ -34,24 +41,20 @@ def find_signals(paras):
     
 def plot_signals(signals, paras):
     df = paras['df']
-    short_window = int(paras['short_window'])
-    long_window = int(paras['long_window'])
     
     fig = plt.figure(figsize = (11,4))
     ax1 = fig.add_subplot(111,  ylabel='Price in $')
     df['Open'].plot(ax=ax1, color='black', lw=1.)
     #Plot the short and long MA
-    signals_plot = signals[['short_mavg', 'long_mavg']]
-    signals_plot.columns = ['MA({})'.format(short_window), 'MA({})'.format(long_window)]
+    signals_plot = signals[['bollinger_high', 'bollinger_low']]
+    signals_plot.columns = ['Bollinger High', 'Bollinger Low']
     signals_plot.plot(ax=ax1, lw=1.5)
     
     # Plot the buy signals
-    ax1.plot(signals.loc[signals.position == 1.0].index, 
-             signals.short_mavg[signals.position == 1.0],
+    ax1.plot(signals.loc[signals['position'] == 1.0].index, df['Open'][signals['position'] == 1.0],
              'o', markersize=7, color='g', label = 'buy')      
     # Plot the sell signals
-    ax1.plot(signals.loc[signals.position == -1.0].index, 
-             signals.short_mavg[signals.position == -1.0],
+    ax1.plot(signals.loc[signals['position'] == -1.0].index, df['Open'][signals['position'] == -1.0],
              'o', markersize=7, color='r', label = 'sell')
     #Show the plot
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.72))
@@ -75,21 +78,20 @@ def run_strat(df, interval = 'daily'):
         
     #Tuning hyperparameter
     fspace = {'df': df, 'commission': commission, 'interval': interval, \
-              'short_window':hp.quniform('short_window', 5, 25, 1), \
-              'long_window':hp.quniform('long_window', 50, 200, 10)}
+              'window':hp.quniform('window', 10, 100, 5), 'std':hp.quniform('std', 1, 3, 0.2)}
     
     best = fmin(fn = score, space = fspace, algo = tpe.suggest, max_evals = 100)
     print(best)
     
     #Run strategy with new parameters
     paras_best = {'df': df, 'commission': commission, 'interval': interval, \
-                  'short_window': best['short_window'], 'long_window': best['long_window']} 
+                  'window': best['window'], 'std': best['std']} 
     signals = find_signals(paras_best)
     
     portfolio, port_intraday = lib.compute_portfolio(df, signals, commission, interval)
     backtest_data = lib.backtesting(portfolio)
-    backtest_data['optimal_paras'] = {'short_window': best['short_window'], \
-                                      'long_window': best['long_window']} 
+    backtest_data['optimal_paras'] = {'window': best['window'], \
+                                      'std': best['std']} 
 
     report_dict = {
             'df': df.to_json(orient = 'split', date_format = 'iso'),
@@ -99,6 +101,7 @@ def run_strat(df, interval = 'daily'):
             'cummulative_return': backtest_data['cummulative_return'],
             'sharpe_ratio': backtest_data['sharpe_ratio'],
             'cagr': backtest_data['cagr'],
+            'strategy': 'bollingerbands',
             'optimal_paras': backtest_data['optimal_paras'],
             'signals': signals.to_json(orient = 'split', date_format = 'iso'),
             'portfolio': portfolio.to_json(orient = 'split', date_format = 'iso'),

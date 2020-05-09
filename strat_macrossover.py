@@ -1,9 +1,5 @@
-import base64
-import io
 import pandas as pd
 import numpy as np
-import pandas_datareader.data as web
-from alpha_vantage.timeseries import TimeSeries
 from hyperopt import hp, tpe, fmin
 import matplotlib.pyplot as plt
 from matplotlib import style
@@ -12,10 +8,6 @@ style.use('ggplot')
 import lib
 
 
-
-#Get data with package alpha_vantage
-lib.init()
-ts = TimeSeries(key = lib.api_key, output_format = 'pandas')
 
 def find_signals(paras):
     df = paras['df']
@@ -54,12 +46,10 @@ def plot_signals(signals, paras):
     signals_plot.plot(ax=ax1, lw=1.5)
     
     # Plot the buy signals
-    ax1.plot(signals.loc[signals.position == 1.0].index, 
-             signals.short_mavg[signals.position == 1.0],
+    ax1.plot(signals.loc[signals['position'] == 1.0].index, signals['short_mavg'][signals['position'] == 1.0],
              'o', markersize=7, color='g', label = 'buy')      
     # Plot the sell signals
-    ax1.plot(signals.loc[signals.position == -1.0].index, 
-             signals.short_mavg[signals.position == -1.0],
+    ax1.plot(signals.loc[signals['position'] == -1.0].index, signals['short_mavg'][signals['position'] == -1.0],
              'o', markersize=7, color='r', label = 'sell')
     #Show the plot
     ax1.legend(loc='center left', bbox_to_anchor=(1, 0.72))
@@ -78,45 +68,8 @@ def score(paras):
     return -sharpe_ratio
 
 
-def run_strat(tab, list_of_contents, list_of_names, ticker, start_date, end_date, interval = 'daily'):
+def run_strat(df, interval = 'daily'):
     commission = 0.0015
-    col_dict = {
-         '1. open': 'Open',
-         '2. high': 'High',
-         '3. low': 'Low',
-         '4. close': 'Close',
-         '5. volume': 'Volume'
-    }
-    if tab == 'local':
-        interval = '5min'
-        pairs = zip(list_of_contents, list_of_names)
-        for content, name in pairs:
-            content_type, content_string = content.split(',')
-            print(content_string)
-            decoded = base64.b64decode(content_string)
-            if 'csv' in name:
-                # Assume that the user uploaded a CSV file
-                df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-            elif 'xls' in name:
-                # Assume that the user uploaded an excel file
-                df = pd.read_excel(io.BytesIO(decoded))
-            df.set_index('DateTime', inplace = True)
-            df.index = pd.to_datetime(df.index)
-    elif tab == 'online':
-        if interval == '1min':
-            df, metadata = ts.get_intraday(ticker, interval = '1min', outputsize = 'full')
-            df.rename(columns = col_dict, inplace = True) #Rename column of data
-        elif interval == '5min':
-            df, metadata = ts.get_intraday(ticker, interval = '5min', outputsize = 'full')
-            df.rename(columns = col_dict, inplace = True)
-        elif interval == '30min':
-            df, metadata = ts.get_intraday(ticker, interval = '30min', outputsize = 'full')
-            df.rename(columns = col_dict, inplace = True)
-        elif interval == '60min':
-            df, metadata = ts.get_intraday(ticker, interval = '60min', outputsize = 'full')
-            df.rename(columns = col_dict, inplace = True)
-        else:
-            df = web.DataReader(ticker, 'yahoo', start_date, end_date)
         
     #Tuning hyperparameter
     fspace = {'df': df, 'commission': commission, 'interval': interval, \
@@ -144,6 +97,7 @@ def run_strat(tab, list_of_contents, list_of_names, ticker, start_date, end_date
             'cummulative_return': backtest_data['cummulative_return'],
             'sharpe_ratio': backtest_data['sharpe_ratio'],
             'cagr': backtest_data['cagr'],
+            'strategy': 'macrossover',
             'optimal_paras': backtest_data['optimal_paras'],
             'signals': signals.to_json(orient = 'split', date_format = 'iso'),
             'portfolio': portfolio.to_json(orient = 'split', date_format = 'iso'),
