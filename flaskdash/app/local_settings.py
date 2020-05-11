@@ -13,7 +13,9 @@ DEBUG = True
 SECRET_KEY = 'MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAI1zSuEJ5OfembK+zIUNQGBd+Z/iEjWwtETTeeBG0VxJXXu+9b9z63XUnsZUfC6kCYbJZZbCZsEUlnGeoHtSI1MCAwEAAQ=='
 
 # SQLAlchemy settings
-SQLALCHEMY_DATABASE_URI = 'sqlite:///../userdb.sqlite'
+SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://postgres:qtdata2020@192.168.1.9:5432/tradingsystem_dev'
+# SQLAlchemy settings for local
+# SQLALCHEMY_DATABASE_URI = 'sqlite:///../userdb.sqlite'
 SQLALCHEMY_TRACK_MODIFICATIONS = False    # Avoids a SQLAlchemy Warning
 SESSION_TYPE = 'sqlalchemy'
 
