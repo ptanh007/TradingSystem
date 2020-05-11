@@ -1,5 +1,5 @@
 #!/bin/sh
-UPSTREAM="origin/flaskdash"
+UPSTREAM="origin/master"
 LOCAL=$(git rev-parse @)
 REMOTE=$(git rev-parse "$UPSTREAM")
 BASE=$(git merge-base @ "$UPSTREAM")
