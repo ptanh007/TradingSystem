@@ -4,6 +4,7 @@ LOCAL=$(git rev-parse @)
 REMOTE=$(git rev-parse "$UPSTREAM")
 BASE=$(git merge-base @ "$UPSTREAM")
 
+git fetch origin master
 if [ $LOCAL = $REMOTE ]
 then
 	echo "No new update."
