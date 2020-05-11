@@ -27,7 +27,6 @@ scipy==1.4.1
 matplotlib
 numpy
 plotly
-datetime
 python-dateutil
 
 
