@@ -14,19 +14,21 @@ Flask-User
 Flask-WTF==0.14.3
 Flask-Session
 email_validator
+SQLAlchemy==1.1.0
 
 # Dash Trading
 dash==1.12.0
-pandas-datareader==0.8.1
+dash-table==4.3.0
+pandas==0.24.1
+pandas-datareader==0.8.0
 alpha-vantage==2.2.0
 hyperopt==0.2.4
 scipy==1.4.1
 matplotlib
 numpy
-pandas
 plotly
 python-dateutil
-SQLAlchemy==1.1.0
+
 
 # Automated tests
 pytest==3.0.5
@@ -37,4 +39,4 @@ pytest-cov==2.4.0
 # tox==2.7.0
 
 # Run
-gunicorn
+gunicorn==19.9.0
