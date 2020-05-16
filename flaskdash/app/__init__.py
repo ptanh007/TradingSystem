@@ -17,6 +17,9 @@ from flask_session import Session
 from flask_login import login_required
 
 import dash
+import dash_core_components as dcc
+import dash_html_components as html
+
 from flask.helpers import get_root_path
 
 # Instantiate Flask extensions
@@ -59,6 +62,7 @@ def create_app(extra_config_settings={}):
 
     # dash
     register_dashapps(app)
+    register_stickerapp(app)
     csrf_protect._exempt_views.add('dash.dash.dispatch')
 
     # Register blueprints
@@ -146,6 +150,25 @@ def register_dashapps(app):
 
     _protect_dashviews(dashapp1)
 
+def register_stickerapp(app):
+    from app.stickerapp.layout import layout
+    from app.stickerapp.callbacks import register_callbacks
+
+    # Meta tags for viewport responsiveness
+    meta_viewport = {"name": "viewport", "content": "width=device-width, initial-scale=1, shrink-to-fit=no"}
+
+    dashapp2 = dash.Dash(__name__,
+                         server=app,
+                         url_base_pathname='/sticker/',
+                         assets_folder=get_root_path(__name__) + '/dashboard/assets/',
+                         meta_tags=[meta_viewport])
+
+    with app.app_context():
+        dashapp2.title = 'QT-Trading'
+        dashapp2.layout = layout
+        register_callbacks(dashapp2)
+
+    _protect_dashviews(dashapp2)
 
 def _protect_dashviews(dashapp):
     for view_func in dashapp.server.view_functions:
