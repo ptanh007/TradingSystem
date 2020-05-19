@@ -24,6 +24,12 @@ def member_page():
     session['trading_expired'] = current_user.trading_expired
     return render_template('views/controller1/member_base.html')
 
+@main_blueprint.route('/dashboard1', methods=['GET'])
+@login_required
+def dashboard_page():
+
+    return render_template('views/controller1/dashboard.html')
+
 # The Admin page is accessible to users with the 'admin' role
 @main_blueprint.route('/admin')
 @roles_accepted('admin')  # Limits access to users with the 'admin' role
