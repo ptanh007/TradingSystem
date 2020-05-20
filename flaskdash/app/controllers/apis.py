@@ -7,11 +7,13 @@ from flask_user import current_user, login_required, roles_accepted
 from app import db
 from app.models.user_models import UserProfileForm
 import uuid, json, os
-import datetime
+from datetime import datetime
 
 from alpha_vantage.timeseries import TimeSeries
 from app.tradingapp import lib
-from app.tradingapp import strat_macrossover
+
+import yfinance as yf
+from dateutil.relativedelta import relativedelta
 
 lib.init()
 ts = TimeSeries(key = lib.api_key, output_format = 'pandas')
@@ -25,9 +27,8 @@ def sample_page():
     ret = {"sample return": 10}
     return(jsonify(ret), 200)
 
-@api_blueprint.route('/quote_data', methods=['GET'])
-def quote_data():
-    report_dict = {}
+@api_blueprint.route('/ts', methods=['GET'])
+def tsapi():
 
     col_dict = {
         '1. open': 'Open',
@@ -36,19 +37,37 @@ def quote_data():
         '4. close': 'Close',
         '5. volume': 'Volume'
     }
-    #if
+
     interval = '1min'
-    ticker = 'GOOG'
-    df, metadata = ts.get_intraday(ticker, interval='60min', outputsize='full')
+    ticker = request.args['ticker']
+    df, metadata = ts.get_intraday(symbol=ticker, interval='60min', outputsize='full')
     df.rename(columns=col_dict, inplace=True)  # Rename column of data
 
-    #json_data = [{'data': list(value.values), 'name': key} for key, value in df.items()]
     df.reset_index(inplace=True)
 
     result = df.to_json(orient='values', date_unit='ms')
-    #featureList = col_dict.values()
-    #for feature in featureList:
-    print(df)
-    print(result)
 
     return result
+
+@api_blueprint.route('/yf', methods=['GET'])
+def yfapi():
+
+    col_dict = {
+        '1. open': 'Open',
+        '2. high': 'High',
+        '3. low': 'Low',
+        '4. close': 'Close',
+        '5. volume': 'Volume'
+    }
+
+
+    ticker = request.args['ticker']
+    start_date = (datetime.now() - relativedelta(days=7)).strftime("%Y-%m-%d")
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    df = yf.download(ticker, start=start_date, end=end_date, interval="1m")
+
+    df.rename(columns=col_dict, inplace=True)  # Rename column of data
+
+    df.reset_index(inplace=True)
+
+    return df.to_json(orient='values', date_unit='ms')

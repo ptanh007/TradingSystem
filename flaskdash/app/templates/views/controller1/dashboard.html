@@ -105,7 +105,7 @@
 
 <script>
 
-Highcharts.getJSON('/quote_data', function (data) {
+Highcharts.getJSON('/ts?ticker=GOOG', function (data) {
   Highcharts.stockChart('container', {
         title: {
             text: 'GOOG'
