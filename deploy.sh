@@ -13,6 +13,8 @@ fi
 echo "Start updating new version..."
 git pull
 
+#TODO update venv
+
 #TODO database migrate
 
 #TODO force reload with upstart

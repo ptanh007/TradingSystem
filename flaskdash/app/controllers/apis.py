@@ -38,16 +38,16 @@ def tsapi():
         '5. volume': 'Volume'
     }
 
-    interval = '1min'
+    interval = '5min'
     ticker = request.args['ticker']
-    df, metadata = ts.get_intraday(symbol=ticker, interval='60min', outputsize='full')
+    df, metadata = ts.get_intraday(symbol=ticker, interval=interval)
     df.rename(columns=col_dict, inplace=True)  # Rename column of data
 
-    df.reset_index(inplace=True)
-
-    result = df.to_json(orient='values', date_unit='ms')
-
-    return result
+    #df.reset_index(inplace=True)
+    df.to_json(orient='values', date_unit='ms')
+    rs = df.to_dict(orient='index')#df.to_json(orient='values', date_unit='ms')
+    rs = {k.value//10**6: list(v.values()) for k, v in rs.items()}
+    return rs
 
 @api_blueprint.route('/yf', methods=['GET'])
 def yfapi():

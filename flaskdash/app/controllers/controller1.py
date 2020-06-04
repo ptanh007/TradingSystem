@@ -27,8 +27,12 @@ def member_page():
 @main_blueprint.route('/dashboard1', methods=['GET'])
 @login_required
 def dashboard_page():
-
     return render_template('views/controller1/dashboard.html')
+
+@main_blueprint.route('/dashboard2', methods=['GET'])
+@login_required
+def dashboard2_page():
+    return render_template('views/controller1/dashboard2.html')
 
 # The Admin page is accessible to users with the 'admin' role
 @main_blueprint.route('/admin')
